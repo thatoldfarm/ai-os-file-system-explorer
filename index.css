@@ -115,7 +115,7 @@ body {
 
 .content-viewer {
     padding: 0;
-    /* min-height: 0; Ensure it can shrink in the grid row */ /* Reverted this change */
+    min-height: 0; /* Ensure it can shrink in the grid row */
 }
 
 .file-explorer-header {
