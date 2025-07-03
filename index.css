@@ -115,6 +115,7 @@ body {
 
 .content-viewer {
     padding: 0;
+    /* min-height: 0; Ensure it can shrink in the grid row */ /* Reverted this change */
 }
 
 .file-explorer-header {
@@ -523,6 +524,10 @@ body {
 .emu-window-header h3 {
     margin: 0;
     font-family: var(--font-primary);
+}
+.emu-window-header { /* Ensure header is above iframe content in its stacking context */
+    position: relative;
+    z-index: 10; /* Higher than default, just in case iframe creates issues */
 }
 .emu-window-header button {
   background: transparent;
