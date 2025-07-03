@@ -1,0 +1,318 @@
+
+:root {
+  --background-color: #1a1b26;
+  --primary-color: #7aa2f7;
+  --text-color: #c0caf5;
+  --header-bg: #1f202e;
+  --panel-bg: #24283b;
+  --panel-border: #414868;
+  --hover-bg: #292e42;
+  --active-bg: #3b4261;
+  --loader-color: var(--primary-color);
+  --error-color: #f7768e;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background-color: var(--background-color);
+  color: var(--text-color);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.app-header {
+  background-color: var(--header-bg);
+  padding: 0.75rem 1.5rem;
+  border-bottom: 1px solid var(--panel-border);
+  flex-shrink: 0;
+}
+
+.app-header h1 {
+  color: var(--primary-color);
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.main-content {
+  display: flex;
+  flex-grow: 1;
+  overflow: hidden;
+}
+
+.file-explorer {
+  width: 320px;
+  flex-shrink: 0;
+  background-color: var(--panel-bg);
+  border-right: 1px solid var(--panel-border);
+  padding: 1rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.file-explorer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--panel-border);
+  flex-shrink: 0;
+}
+
+.file-explorer h2 {
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-color);
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.copy-filenames-button {
+    background-color: var(--hover-bg);
+    color: var(--primary-color);
+    border: 1px solid var(--primary-color);
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.copy-filenames-button:hover {
+    background-color: var(--primary-color);
+    color: var(--panel-bg);
+}
+
+.file-list {
+  list-style: none;
+  overflow-y: auto;
+  flex-grow: 1;
+}
+
+.file-item {
+  display: flex;
+  align-items: center;
+  padding: 0.6rem 0.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  user-select: none;
+}
+
+.file-item:hover {
+  background-color: var(--hover-bg);
+}
+
+.file-item.active {
+  background-color: var(--active-bg);
+  color: #ffffff;
+}
+
+.file-icon {
+  width: 1.2em;
+  height: 1.2em;
+  margin-right: 0.75rem;
+  flex-shrink: 0;
+  color: var(--text-color);
+}
+
+.file-item.active .file-icon {
+    color: var(--primary-color);
+}
+
+.file-name {
+  flex-grow: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.9rem;
+}
+
+.file-size {
+  font-size: 0.8rem;
+  color: var(--text-color);
+  opacity: 0.7;
+  margin-left: 1rem;
+  flex-shrink: 0;
+}
+
+.content-viewer {
+  flex-grow: 1;
+  padding: 1.5rem;
+  overflow: auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.content-viewer.placeholder {
+    color: var(--text-color);
+    opacity: 0.6;
+    text-align: center;
+}
+
+.content-viewer pre.content-text {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  background-color: var(--panel-bg);
+  padding: 1rem;
+  border-radius: 8px;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  font-family: 'Fira Code', 'Courier New', monospace;
+  font-size: 0.9rem;
+}
+
+.content-viewer img, .content-viewer video {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    border-radius: 8px;
+}
+
+.content-viewer .content-iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    border-radius: 8px;
+    background-color: #fff;
+}
+
+.content-download {
+    text-align: center;
+}
+
+.download-button {
+    display: inline-block;
+    margin-top: 1rem;
+    padding: 0.75rem 1.5rem;
+    background-color: var(--primary-color);
+    color: var(--background-color);
+    text-decoration: none;
+    font-weight: 600;
+    border-radius: 6px;
+    transition: opacity 0.2s ease;
+}
+
+.download-button:hover {
+    opacity: 0.9;
+}
+
+/* Loader Styles */
+.loader-container, .error-message {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  text-align: center;
+}
+
+.error-message {
+    color: var(--error-color);
+    font-size: 1.1rem;
+    padding: 2rem;
+}
+
+.loader {
+  border: 4px solid var(--panel-bg);
+  border-top: 4px solid var(--loader-color);
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@media (max-width: 768px) {
+    .main-content {
+        flex-direction: column;
+    }
+    .file-explorer {
+        width: 100%;
+        height: 40%;
+        border-right: none;
+        border-bottom: 1px solid var(--panel-border);
+    }
+    .content-viewer {
+        height: 60%;
+    }
+}
+
+/* Action Buttons */
+.file-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: 8px;
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+}
+
+.file-item:hover .file-actions {
+  opacity: 1;
+}
+
+.action-button {
+  background: transparent;
+  border: none;
+  color: var(--text-color);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.action-button:hover {
+  background-color: var(--hover-bg);
+  color: var(--primary-color);
+}
+
+.action-button svg {
+  width: 16px;
+  height: 16px;
+}
+
+.action-button:disabled {
+  color: var(--panel-border);
+  cursor: not-allowed;
+}
+
+.action-button:disabled:hover {
+  background-color: transparent;
+  color: var(--panel-border);
+}

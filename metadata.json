@@ -1,0 +1,6 @@
+{
+  "name": "AI OS File System Explorer",
+  "description": "A virtual file system explorer that boots from a single HTML file, unpacking and displaying its contents.",
+  "requestFramePermissions": [],
+  "prompt": ""
+}
