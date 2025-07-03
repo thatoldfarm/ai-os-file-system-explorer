@@ -520,20 +520,20 @@ const ContentViewer: FC<{
       return <div className="content-viewer placeholder">Select a file to view its content</div>;
     }
     
-    const {setShowEmulatorWindow, setShowFreeDosWindow} = appProps;
+    // const {setShowEmulatorWindow, setShowFreeDosWindow} = appProps; // appProps still passed to LiaChatInterface
 
     if (file.name === 'LIA_HOSS.key') {
         return <LiaChatInterface {...appProps} />;
     }
 
     if (file.name === 'sectorforth.app') {
-        setShowEmulatorWindow(true);
-        return <div className="content-viewer placeholder">Launching Sectorforth...</div>;
+        // The App component's useEffect will handle showing the emulator
+        return <div className="content-viewer placeholder">Sectorforth Emulator selected.</div>;
     }
     
     if (file.name === 'freedos.app') {
-        setShowFreeDosWindow(true);
-        return <div className="content-viewer placeholder">Launching FreeDOS...</div>;
+        // The App component's useEffect will handle showing the emulator
+        return <div className="content-viewer placeholder">FreeDOS Emulator selected.</div>;
     }
 
 
@@ -662,6 +662,16 @@ const App: FC = () => {
   useEffect(() => {
     if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight;
   }, [chatHistory]);
+
+  useEffect(() => {
+    if (activeFile?.name === 'sectorforth.app') {
+      setShowSectorforth(true);
+    } else if (activeFile?.name === 'freedos.app') {
+      setShowFreedos(true);
+    }
+    // This effect is for opening modals when .app files are selected.
+    // Closing is handled by the modals' own onClose props.
+  }, [activeFile]); // Intentionally only depending on activeFile
   
   useEffect(() => {
     if (!isBootstrapping || bootstrapComplete) return;
