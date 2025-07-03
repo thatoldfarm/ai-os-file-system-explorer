@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -9,28 +8,25 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@300;500&display=swap" rel="stylesheet">
-    <script src="pako.min.js"></script>
-  <script type="importmap">
+    <script async src="https://unpkg.com/es-module-shims@1.10.0/dist/es-module-shims.js"></script>
+    <script type="importmap">
 {
   "imports": {
-    "react": "https://esm.sh/react@^19.1.0",
-    "react-dom/": "https://esm.sh/react-dom@^19.1.0/",
-    "@google/genai": "https://esm.sh/@google/genai@^1.8.0",
-    "react/": "https://esm.sh/react@^19.1.0/",
-    "path": "https://esm.sh/path@^0.12.7",
-    "vite": "https://esm.sh/vite@^7.0.1",
-    "url": "https://esm.sh/url@^0.11.4",
+    "preact": "https://esm.sh/preact@10.19.6",
+    "preact/": "https://esm.sh/preact@10.19.6/",
+    "preact/hooks": "https://esm.sh/preact@10.19.6/hooks",
+    "htm/preact": "https://esm.sh/htm@3.1.1/preact",
+    "@google/genai": "https://esm.run/@google/genai",
     "htm/": "https://esm.sh/htm@^3.1.1/",
-    "preact": "https://esm.sh/preact@^10.26.9",
-    "preact/": "https://esm.sh/preact@^10.26.9/"
+    "path": "https://esm.sh/path@^0.12.7",
+    "vite": "https://esm.sh/vite@^7.0.0"
   }
 }
 </script>
-<link rel="stylesheet" href="/index.css">
+  <link rel="stylesheet" href="/index.css">
 </head>
   <body>
     <div id="root"></div>
     <script type="module" src="index.tsx"></script>
-  <script type="module" src="/index.tsx"></script>
 </body>
 </html>
