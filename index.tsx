@@ -789,7 +789,7 @@ const App: FC = () => {
                 <p class="bootstrap-step-message">${BOOTSTRAP_SEQUENCE[bootstrapStep] || "Finalizing..."}</p>
                 <div class="loader"></div> {/* Using existing loader style */}
                 <div class="bootstrap-progress-bar">
-                  <div class="bootstrap-progress" style=${{ width: `${(bootstrapStep + 1) / BOOTSTRAP_SEQUENCE.length * 100}%` }}></div>
+                  <div class="bootstrap-progress" style="width: ${(bootstrapStep + 1) / BOOTSTRAP_SEQUENCE.length * 100}%;"></div>
                 </div>
               </div>
             )}
