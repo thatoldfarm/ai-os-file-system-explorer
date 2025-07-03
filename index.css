@@ -252,8 +252,10 @@ body {
 .lia-container, .chat-container {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  flex-grow: 1; /* Changed from height: 100% */
   background: var(--panel-bg);
+  /* Add overflow: hidden as a precaution if its children misbehave, though chat-log has overflow-y */
+  overflow: hidden;
 }
 .engage-container {
     justify-content: center;
@@ -265,6 +267,7 @@ body {
 .chat-log {
   flex-grow: 1;
   overflow-y: auto;
+  min-height: 0; /* Allow chat log to shrink and enable scrolling within flex parent */
   padding: 1rem;
   display: flex;
   flex-direction: column;
