@@ -46,11 +46,16 @@ export const VIRTUAL_SECTORFORTH_HTML = `<!DOCTYPE html>
             height: calc(100vh - 100px);
             overflow-y: auto;
         }
+        #reference-panel h1, #reference-panel h2, #reference-panel h3 {
+            font-size: 1.5rem;
+            color: #569cd6;
+            border-bottom: 1px solid #333;
+            padding-bottom: 0.5rem;
+            margin-top: 0;
+        }
         #reference-panel h3 {
             font-size: 1.3rem;
             color: #4ec9b0;
-            border-bottom: 1px solid #333;
-            padding-bottom: 0.5rem;
             margin-top: 1.5rem;
         }
         .command-item {
@@ -65,6 +70,7 @@ export const VIRTUAL_SECTORFORTH_HTML = `<!DOCTYPE html>
             font-size: 1.1rem;
             color: #9cdcfe;
             margin: 0 0 0.5rem 0;
+            padding-right: 60px; /* Space for copy button */
         }
         .command-item p {
             font-size: 0.9em;
@@ -79,6 +85,9 @@ export const VIRTUAL_SECTORFORTH_HTML = `<!DOCTYPE html>
             font-family: 'Courier New', Courier, monospace;
         }
         .copy-btn {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
             background: #3c3c3c;
             border: 1px solid #555;
             color: #ccc;
@@ -138,7 +147,7 @@ export const VIRTUAL_SECTORFORTH_HTML = `<!DOCTYPE html>
             padding: 0;
             background: none;
             display: block;
-            padding-right: 60px;
+            padding-right: 60px; /* Space for copy button */
         }
         .code-block .copy-btn {
             position: absolute;
@@ -171,7 +180,7 @@ export const VIRTUAL_SECTORFORTH_HTML = `<!DOCTYPE html>
             return;
         }
         // Replace escaped newline with actual newline for clipboard
-        const textToCopy = text.replace(/\\n/g, '\\n');
+        const textToCopy = text.replace(/\\\\n/g, '\\n');
         navigator.clipboard.writeText(textToCopy).then(function() {
             const originalText = button.textContent;
             button.textContent = 'Copied!';
@@ -231,43 +240,43 @@ export const VIRTUAL_SECTORFORTH_HTML = `<!DOCTYPE html>
                 <p>Paste these definitions into the emulator to build up functionality.</p>
 
                 <div class="command-item">
-                    <h4>DUP <span class="stack-effect">( x -- x x )</span></h4>
-                    <div class="code-block"><code>: DUP SP@ @ ;</code><button class="copy-btn" onclick="copyText(this, ': DUP SP@ @ ;')">Copy</button></div>
+                    <h4><button class="copy-btn" onclick="copyText(this, ': DUP SP@ @ ;')">Copy</button>DUP <span class="stack-effect">( x -- x x )</span></h4>
+                    <p><code>: DUP SP@ @ ;</code></p>
                 </div>
 
                 <div class="command-item">
-                    <h4>INVERT <span class="stack-effect">( x -- !x )</span></h4>
-                    <div class="code-block"><code>: INVERT DUP NAND ;</code><button class="copy-btn" onclick="copyText(this, ': INVERT DUP NAND ;')">Copy</button></div>
+                    <h4><button class="copy-btn" onclick="copyText(this, ': INVERT DUP NAND ;')">Copy</button>INVERT <span class="stack-effect">( x -- !x )</span></h4>
+                    <p><code>: INVERT DUP NAND ;</code></p>
                 </div>
 
                 <div class="command-item">
-                    <h4>-1 and 1</h4>
-                    <div class="code-block"><code>: -1 0 INVERT ;\\n: 1 -1 DUP + INVERT ;</code><button class="copy-btn" onclick="copyText(this, ': -1 0 INVERT ;\\n: 1 -1 DUP + INVERT ;')">Copy</button></div>
+                    <h4><button class="copy-btn" onclick="copyText(this, ': -1 0 INVERT ;\\\\n: 1 -1 DUP + INVERT ;')">Copy</button>-1 and 1</h4>
+                    <p><code>: -1 0 INVERT ;</code><br><code>: 1 -1 DUP + INVERT ;</code></p>
                 </div>
 
                 <div class="command-item">
-                    <h4>NEGATE <span class="stack-effect">( x -- -x )</span></h4>
-                    <div class="code-block"><code>: NEGATE INVERT 1 + ;</code><button class="copy-btn" onclick="copyText(this, ': NEGATE INVERT 1 + ;')">Copy</button></div>
+                    <h4><button class="copy-btn" onclick="copyText(this, ': NEGATE INVERT 1 + ;')">Copy</button>NEGATE <span class="stack-effect">( x -- -x )</span></h4>
+                    <p><code>: NEGATE INVERT 1 + ;</code></p>
                 </div>
 
                 <div class="command-item">
-                    <h4>Numbers 2 to 6</h4>
-                    <div class="code-block"><code>: 2 1 1 + ;\\n: 3 1 2 + ;\\n: 4 2 2 + ;\\n: 5 2 3 + ;\\n: 6 3 3 + ;</code><button class="copy-btn" onclick="copyText(this, ': 2 1 1 + ;\\n: 3 1 2 + ;\\n: 4 2 2 + ;\\n: 5 2 3 + ;\\n: 6 3 3 + ;')">Copy</button></div>
+                    <h4><button class="copy-btn" onclick="copyText(this, ': 2 1 1 + ;\\\\n: 3 1 2 + ;\\\\n: 4 2 2 + ;\\\\n: 5 2 3 + ;\\\\n: 6 3 3 + ;')">Copy</button>Numbers 2 to 6</h4>
+                    <p><code>: 2 1 1 + ;</code><br><code>: 3 1 2 + ;</code><br><code>: 4 2 2 + ;</code><br><code>: 5 2 3 + ;</code><br><code>: 6 3 3 + ;</code></p>
                 </div>
 
                 <div class="command-item">
-                    <h4>OVER <span class="stack-effect">( x y -- x y x )</span></h4>
-                    <div class="code-block"><code>: OVER SP@ 2 + @ ;</code><button class="copy-btn" onclick="copyText(this, ': OVER SP@ 2 + @ ;')">Copy</button></div>
+                    <h4><button class="copy-btn" onclick="copyText(this, ': OVER SP@ 2 + @ ;')">Copy</button>OVER <span class="stack-effect">( x y -- x y x )</span></h4>
+                    <p><code>: OVER SP@ 2 + @ ;</code></p>
                 </div>
 
                 <div class="command-item">
-                    <h4>DROP <span class="stack-effect">( x -- )</span></h4>
-                    <div class="code-block"><code>: DROP SP@ 2 + SP@ ! ;</code><button class="copy-btn" onclick="copyText(this, ': DROP SP@ 2 + SP@ ! ;')">Copy</button></div>
+                    <h4><button class="copy-btn" onclick="copyText(this, ': DROP SP@ 2 + SP@ ! ;')">Copy</button>DROP <span class="stack-effect">( x -- )</span></h4>
+                    <p><code>: DROP SP@ 2 + SP@ ! ;</code></p>
                 </div>
 
                 <div class="command-item">
-                    <h4>SWAP <span class="stack-effect">( x y -- y x )</span></h4>
-                    <div class="code-block"><code>: SWAP OVER OVER SP@ 6 + ! SP@ 2 + ! ;</code><button class="copy-btn" onclick="copyText(this, ': SWAP OVER OVER SP@ 6 + ! SP@ 2 + ! ;')">Copy</button></div>
+                    <h4><button class="copy-btn" onclick="copyText(this, ': SWAP OVER OVER SP@ 6 + ! SP@ 2 + ! ;')">Copy</button>SWAP <span class="stack-effect">( x y -- y x )</span></h4>
+                    <p><code>: SWAP OVER OVER SP@ 6 + ! SP@ 2 + ! ;</code></p>
                 </div>
             </div>
         </div>
