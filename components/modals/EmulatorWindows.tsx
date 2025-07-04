@@ -5,9 +5,10 @@ interface EmulatorWindowProps {
   title: string;
   isVisible: boolean;
   onClose: () => void;
+  assetsMap: Record<string, string> | null;
 }
 
-const EmulatorWindow: React.FC<EmulatorWindowProps> = ({ src, title, isVisible, onClose }) => {
+const EmulatorWindow: React.FC<EmulatorWindowProps> = ({ src, title, isVisible, onClose, assetsMap }) => {
   if (!isVisible) {
     return null;
   }
@@ -15,36 +16,30 @@ const EmulatorWindow: React.FC<EmulatorWindowProps> = ({ src, title, isVisible, 
   const iframeRef = React.useRef<HTMLIFrameElement>(null);
 
   React.useEffect(() => {
-    if (isVisible && iframeRef.current && src) {
+    if (isVisible && iframeRef.current && src && assetsMap) {
       const iframe = iframeRef.current;
       const handleLoad = () => {
-        // This is a simplified example. In a real app, you'd fetch
-        // the actual blob data for seabios, vgabios, and the fda/hda.
-        // For now, we'll send placeholder URLs or identifiers.
-        const mockBlobs = {
-          "seabios.bin": "/public/seabios.bin", // Placeholder
-          "vgabios.bin": "/public/vgabios.bin", // Placeholder
-        };
-        if (title === "Sectorforth Emulator") {
-          mockBlobs["sectorforth.img"] = "/public/sectorforth.img"; // Placeholder
-        } else if (title === "FreeDOS Emulator") {
-          mockBlobs["freedos.boot.disk.160K.img"] = "/public/freedos.boot.disk.160K.img"; // Placeholder
-        }
-        // libv86.js is usually loaded via a script tag in the iframe's HTML,
-        // so we might not need to send it via postMessage if start-*.html handles it.
-        // However, if start-*.html expects it in blobs, include it.
-        mockBlobs["libv86.js"] = "/public/libv86.js";
-
-
-        if (iframe.contentWindow) {
-          iframe.contentWindow.postMessage({ type: 'emulatorAssets', payload: mockBlobs }, '*');
+        if (iframe.contentWindow && assetsMap && Object.keys(assetsMap).length > 0) {
+          console.log(`Posting assets to ${title}:`, assetsMap);
+          iframe.contentWindow.postMessage({ type: 'emulatorAssets', payload: assetsMap }, '*');
+        } else if (assetsMap && Object.keys(assetsMap).length === 0) {
+            console.warn(`Asset map for ${title} is empty. Emulator might not load correctly.`);
         }
       };
 
-      iframe.addEventListener('load', handleLoad);
+      // Ensure the iframe is fully loaded before trying to post a message
+      if (iframe.contentWindow) { // Check if contentWindow is available (it might not be immediately)
+          // If already loaded (e.g. src didn't change but assetsMap did, or fast load)
+          if (iframe.contentDocument && iframe.contentDocument.readyState === 'complete') {
+              handleLoad();
+          } else {
+              iframe.addEventListener('load', handleLoad);
+          }
+      }
+
       return () => iframe.removeEventListener('load', handleLoad);
     }
-  }, [isVisible, src, title]);
+  }, [isVisible, src, title, assetsMap]);
 
   if (!isVisible) {
     return null;
@@ -99,17 +94,27 @@ interface EmulatorProps {
   isVisible: boolean;
   src: string;
   onClose: () => void;
-  // onCopy and copiedContent might not be needed if emulators are self-contained pages
-  // onCopy: (text: string) => void;
-  // copiedContent: string;
+  assetsMap: Record<string, string> | null;
   title?: string;
 }
 
 export const SectorforthEmulatorWindow: React.FC<EmulatorProps> = (props) => {
-  return <EmulatorWindow {...props} title="Sectorforth Emulator" />;
+  return <EmulatorWindow
+            isVisible={props.isVisible}
+            src={props.src}
+            onClose={props.onClose}
+            assetsMap={props.assetsMap}
+            title="Sectorforth Emulator"
+         />;
 };
 
 export const GenericEmulatorWindow: React.FC<EmulatorProps> = (props) => {
   // Ensure a default title if not provided, especially for FreeDOS
-  return <EmulatorWindow {...props} title={props.title || "FreeDOS Emulator"} />;
+  return <EmulatorWindow
+            isVisible={props.isVisible}
+            src={props.src}
+            onClose={props.onClose}
+            assetsMap={props.assetsMap}
+            title={props.title || "FreeDOS Emulator"}
+         />;
 };
