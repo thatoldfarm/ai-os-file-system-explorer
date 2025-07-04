@@ -7,7 +7,7 @@ import { GoogleGenAI } from "@google/genai";
 // Import new modules
 import type { FileBlob, LiaState, ChatMessage, LogEntry } from './core/types';
 import { INITIAL_LIA_STATE, BOOTSTRAP_SEQUENCE } from './core/constants';
-import { getMimeType, unpackFiles, generateIndexHtmlContent } from './core/file-system';
+import { getMimeType, unpackFiles, generateIndexHtmlContent, extractAssetsFromChunkyFileContent } from './core/file-system';
 import { FileExplorer } from './components/FileExplorer';
 import { ContentViewer } from './components/ContentViewer';
 import { SystemManual } from './components/modals/SystemManual';
@@ -327,11 +327,33 @@ Analyze the user's request and the selected operator, and generate the appropria
       try {
         setLoading(true);
         setError(null);
-        const unpackedFiles = await unpackFiles();
-        console.log('Unpacked files from unpackFiles():', JSON.stringify(unpackedFiles.map(f => ({ name: f.name, type: f.type, size: f.size, url: f.url })), null, 2));
-        setFiles(unpackedFiles);
+        let initialUnpackedFiles = await unpackFiles();
 
-        const defaultActiveFile = unpackedFiles.find(f => f.name === 'LIA_HOSS.key') || unpackedFiles[0];
+        let allProcessedFiles: FileBlob[] = [...initialUnpackedFiles];
+
+        const chunkySfFile = initialUnpackedFiles.find(f => f.name === 'chunky-sectorforth.html');
+        if (chunkySfFile && chunkySfFile.textContent) {
+            try {
+                const sfEmbeddedAssetsMap = await extractAssetsFromChunkyFileContent(chunkySfFile);
+                allProcessedFiles = [...allProcessedFiles, ...Object.values(sfEmbeddedAssetsMap)];
+            } catch (e) {
+                console.error("Error extracting Sectorforth assets:", e);
+            }
+        }
+
+        const chunkyFdFile = initialUnpackedFiles.find(f => f.name === 'chunky-freedos.html');
+        if (chunkyFdFile && chunkyFdFile.textContent) {
+            try {
+                const fdEmbeddedAssetsMap = await extractAssetsFromChunkyFileContent(chunkyFdFile);
+                allProcessedFiles = [...allProcessedFiles, ...Object.values(fdEmbeddedAssetsMap)];
+            } catch (e) {
+                console.error("Error extracting FreeDOS assets:", e);
+            }
+        }
+        // console.log('All processed files (after chunky extraction):', JSON.stringify(allProcessedFiles.map(f => ({ name: f.name, type: f.type, size: f.size, url: f.url })), null, 2));
+        setFiles(allProcessedFiles);
+
+        const defaultActiveFile = allProcessedFiles.find(f => f.name === 'LIA_HOSS.key') || allProcessedFiles[0];
         if (defaultActiveFile) {
             setActiveFile(defaultActiveFile);
         }
