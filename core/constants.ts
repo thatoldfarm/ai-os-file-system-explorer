@@ -1,6 +1,5 @@
 
 import type { LiaState } from './types';
-import { VIRTUAL_SECTORFORTH_HTML, VIRTUAL_FREEDOS_HTML } from './emulator-assets';
 
 // --- LIA CORE CONSTANTS ---
 export const INITIAL_LIA_STATE: LiaState = {
@@ -347,12 +346,193 @@ export const VIRTUAL_OS_FILES: { [key: string]: string } = {
     "0index.html": ``, // This will be generated dynamically
     "0shell.html": `<!DOCTYPE html>
 <html lang="en">
-<head><meta charset="UTF-8"><title>Javascript Shell</title>
-<style>body{margin:1rem;padding:0;background:#212230}.terminal{margin:0;padding:0;font-family:Menlo,Courier New;font-size:14px;text-rendering:optimizeLegibility;color:white;font-smoothing:antialiased;cursor:text;counter-reset:input;background:#212230}.terminal .terminal--output{white-space:pre}.terminal .terminal--input{counter-increment:input}.terminal .terminal--input:before{content:"[" counter(input) "] $ "}.terminal .terminal--input input{background:transparent;color:inherit;width:80%;border:none;padding:0;margin:0;overflow:auto;font-family:Menlo,Courier New;font-size:14px}.terminal .terminal--input input:focus{outline:none}.terminal .terminal--output.is-console:before{margin-right:10px;content:">"}.terminal .terminal--output.is-not-defined{color:rgba(255,255,255,.5)}</style>
-<script>var shellCommands={help:function(a,b){for(var c="Commands: \\n\\r",d in shellCommands)c+="  "+d+"\\n\\r";return c.substring(0,c.length-2)},clear:function(a,b){for(;_out.childNodes[0];)_out.removeChild(_out.childNodes[0]);return"Terminal cleared!"},random:function(a,b){return Math.random()}},_win,_in,_out;function refocus(){_in.blur(),_in.focus()}function init(){_in=document.getElementById("terminal-input"),_out=document.getElementById("terminal-output"),_win=window,initTarget(),refocus()}function initTarget(){_win.Shell=window,_win.print=shellCommands.print}function keepFocusInTextbox(a){var b=a.srcElement?a.srcElement:a.target;for(;"A"==!b.tagName&&"INPUT"==!b.tagName.toUpperCase();)b=b.parentNode;if("A"==b.tagName.toUpperCase()||"INPUT"==b.tagName.toUpperCase())return;if(window.getSelection&&String(window.getSelection()))return;refocus()}function terminalInputKeydown(a){13==a.keyCode&&(setTimeout(function(){_in.value=""},0),execute())}function println(a,b){var b=b||"terminal--output";if(s=String(a)){var c=document.createElement("p");return c.appendChild(document.createTextNode(s)),c.className=b,_out.appendChild(c),c}}function printError(a){println(a,"terminal--output is-not-defined")}function execute(){var a=_in.value.substr(0,_in.value.indexOf(" "))||_in.value,b=_in.value.substr(_in.value.indexOf(" ")+1).split(" ");println(a,"terminal--input"),shellCommands[a.toLowerCase()]?println(shellCommands[a.toLowerCase()](a.toLowerCase(),b),"terminal--output"):printError("Command not found: "+a)}</script>
-</head><body onload="init()"><article class="terminal"><section id="terminal-output"><p class=" terminal--header ">Type HELP to get a list of commands</p></section><section class="terminal--input"><input type="text" id="terminal-input" wrap="off" onkeydown="terminalInputKeydown(event)"></section></article></body></html>`,
+<head>
+  <meta charset="UTF-8">
+  <title>LIA Shell</title>
+  <style>
+    :root {
+      --background-color: #0a0c1f;
+      --panel-bg: rgba(16, 24, 43, 0.7);
+      --border-color: rgba(0, 255, 255, 0.2);
+      --primary-glow: #00ffff;
+      --text-color: #d0d0ff;
+      --text-muted: #8080a0;
+      --font-primary: 'Orbitron', sans-serif;
+      --font-secondary: 'Rajdhani', sans-serif;
+    }
+    body {
+      margin: 1rem;
+      padding: 0;
+      background: var(--background-color);
+    }
+    .terminal {
+      margin: 0;
+      padding: 0;
+      font-family: var(--font-secondary), Menlo, Courier New, monospace;
+      font-size: 14px;
+      text-rendering: optimizeLegibility;
+      color: var(--text-color);
+      -webkit-font-smoothing: antialiased;
+      cursor: text;
+      counter-reset: input;
+      background: var(--background-color);
+    }
+    .terminal .terminal--output {
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    .terminal .terminal--input {
+      counter-increment: input;
+      display: flex;
+      align-items: center;
+    }
+    .terminal .terminal--input:before {
+      content: "[LIA] $ ";
+      color: var(--primary-glow);
+      margin-right: 0.5em;
+    }
+    .terminal .terminal--input input {
+      background: transparent;
+      color: inherit;
+      width: 100%;
+      border: none;
+      padding: 0;
+      margin: 0;
+      overflow: auto;
+      font-family: inherit;
+      font-size: 14px;
+      flex-grow: 1;
+    }
+    .terminal .terminal--input input:focus {
+        outline: none;
+    }
+    .terminal .terminal--output.is-console:before {
+      margin-right: 10px;
+      content: ">";
+    }
+    .terminal .terminal--output.is-error {
+      color: #ff9999;
+    }
+    .terminal .terminal--output.is-input-line {
+        display: flex;
+        align-items: center;
+    }
+    .terminal .terminal--output.is-input-line:before {
+        content: "[LIA] $ ";
+        color: var(--primary-glow);
+        margin-right: 0.5em;
+    }
+  </style>
+</head>
+<body onload="init()">
+  <article class="terminal">
+    <section id="terminal-output">
+      <p class="terminal--output">LIA Shell Initialized. Type 'help' for available commands.</p>
+    </section>
+    <section class="terminal--input">
+      <input type="text" id="terminal-input" wrap="off" onkeydown="terminalInputKeydown(event)">
+    </section>
+  </article>
+  <script>
+    var shellCommands = {
+      help: function(cmd, args) {
+        var response = "Available Commands: \\n\\r";
+        for (var command in shellCommands) {
+          response += "  " + command + "\\n\\r";
+        }
+        return response.substring(0, response.length - 2);
+      },
+      clear: function(cmd, args) {
+        var _out = document.getElementById("terminal-output");
+        while (_out.childNodes[0]) {
+          _out.removeChild(_out.childNodes[0]);
+        }
+        return 'Terminal cleared!';
+      },
+      random: function(cmd, args) {
+        return Math.random();
+      },
+      echo: function(cmd, args) {
+        return args.join(' ');
+      }
+    };
+
+    var _in, _out;
+
+    function refocus() {
+      _in.blur();
+      _in.focus();
+    }
+
+    function init() {
+      _in = document.getElementById("terminal-input");
+      _out = document.getElementById("terminal-output");
+      window.addEventListener('click', keepFocusInTextbox, false);
+      refocus();
+    }
+
+    function keepFocusInTextbox(e) {
+      var g = e.target;
+      while (g && !g.tagName) {
+        g = g.parentNode;
+      }
+      if (!g || g.tagName.toUpperCase() === "A" || g.tagName.toUpperCase() === "INPUT") {
+        return;
+      }
+      if (window.getSelection && String(window.getSelection())) {
+        return;
+      }
+      refocus();
+    }
+
+    function terminalInputKeydown(e) {
+      if (e.key === 'Enter') {
+        try {
+          execute();
+        } catch (er) {
+          printError(er);
+        }
+        setTimeout(function() {
+          _in.value = "";
+        }, 0);
+      }
+    }
+
+    function println(s, type) {
+      var s = String(s);
+      var p = document.createElement("p");
+      if (type === 'is-input-line') {
+          p.textContent = s;
+      } else {
+          p.appendChild(document.createTextNode(s));
+      }
+      p.className = 'terminal--output ' + (type || '');
+      _out.appendChild(p);
+      _out.scrollTop = _out.scrollHeight;
+      return p;
+    }
+
+    function printError(er) {
+      println(er, "is-error");
+    }
+
+    function execute() {
+      var fullCmd = _in.value;
+      if (!fullCmd) return;
+      var key = fullCmd.substr(0, fullCmd.indexOf(' ')) || fullCmd;
+      var args = fullCmd.substr(fullCmd.indexOf(' ') + 1).split(" ");
+
+      println(fullCmd, 'is-input-line');
+
+      if (shellCommands[key.toLowerCase()]) {
+        println(shellCommands[key.toLowerCase()](key.toLowerCase(), args));
+      } else {
+        printError('Command not found: ' + key);
+      }
+    }
+  </script>
+</body>
+</html>`,
     "sectorforth.app": "Sectorforth Emulator",
     "freedos.app": "FreeDOS Emulator",
-    "sectorforth_emu.html": VIRTUAL_SECTORFORTH_HTML,
-    "freedos_emu.html": VIRTUAL_FREEDOS_HTML,
 };

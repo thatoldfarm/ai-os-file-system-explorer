@@ -2,21 +2,41 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>File Decoder for Sectorforth Emulator</title>
+    <title>File Decoder from Chunky HTML</title>
     <script src="pako_inflate.min.js"></script>
     <script src="blobHandler.js" type="module"></script>
     <style>
         body {
-            font-family: sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
             line-height: 1.6;
-            margin: 20px;
+            margin: 0;
             background-color: #1e1e1e;
             color: #d4d4d4;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        #page-container {
+            max-width: 1200px;
+            width: 100%;
+            padding: 20px;
+        }
+        #controls {
+            background-color: #252526;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border: 1px solid #333;
+        }
+        #status {
+            margin-top: 10px;
+            font-style: italic;
+            color: #888;
         }
         #main-container {
             display: flex;
-            gap: 20px;
             flex-wrap: wrap;
+            gap: 20px;
         }
         #emulator-column {
             flex: 2;
@@ -24,17 +44,13 @@
         }
         #reference-column {
             flex: 1;
-            min-width: 300px;
-        }
-        h1, h2 {
-            color: #569cd6;
+            min-width: 320px;
         }
         #emulator-container {
             border: 1px solid #333;
-            margin-bottom: 20px;
+            background-color: #000;
         }
         #screen_container {
-            background-color: #000;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -44,15 +60,13 @@
             border: 1px solid #333;
             padding: 15px;
             background-color: #252526;
-            height: calc(100vh - 100px);
-            overflow-y: auto;
+            border-radius: 5px;
         }
-        #reference-panel h3 {
-            font-size: 1.3rem;
-            color: #4ec9b0;
+        #reference-panel h2, #reference-panel h3 {
+            color: #569cd6;
             border-bottom: 1px solid #333;
             padding-bottom: 0.5rem;
-            margin-top: 1.5rem;
+            margin-top: 0;
         }
         .command-item {
             margin-bottom: 1rem;
@@ -66,20 +80,41 @@
             font-size: 1.1rem;
             color: #9cdcfe;
             margin: 0 0 0.5rem 0;
+            padding-right: 60px; /* Space for copy button */
         }
         .command-item p {
             font-size: 0.9em;
             color: #cccccc;
             margin: 0;
         }
-        code {
+        .command-item code {
             background: #1e1e1e;
             color: #ce9178;
             padding: 2px 5px;
             border-radius: 3px;
             font-family: 'Courier New', Courier, monospace;
         }
+        .stack-effect {
+            font-style: italic;
+            color: #4ec9b0;
+            font-weight: normal;
+        }
+        .manual-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 1rem;
+        }
+        .manual-table th, .manual-table td {
+            border: 1px solid #333;
+            padding: 8px;
+            text-align: left;
+        }
+        .manual-table th { background-color: #2a2a2e; }
+        .var-list { padding-left: 20px; }
         .copy-btn {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
             background: #3c3c3c;
             border: 1px solid #555;
             color: #ccc;
@@ -87,196 +122,49 @@
             border-radius: 4px;
             font-size: 0.8rem;
             cursor: pointer;
+            transition: background-color 0.2s;
         }
-        .copy-btn:hover {
-            background: #4f4f4f;
-        }
-        .copy-btn.copied {
-            background: #569cd6;
-            color: #fff;
-        }
-        .manual-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 1rem;
-            font-size: 0.9em;
-        }
-        .manual-table th, .manual-table td {
-            border: 1px solid #3c3c3c;
-            padding: 8px;
-            text-align: left;
-        }
-        .manual-table th {
-            background-color: #2a2a2e;
-            color: #9cdcfe;
-        }
-        .var-list {
-            list-style-type: none;
-            padding-left: 0;
-        }
-        .var-list li {
-            background: #2a2a2e;
-            border: 1px solid #333;
-            border-radius: 4px;
-            padding: 0.75rem;
-            margin-bottom: 0.5rem;
-        }
-        .stack-effect {
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 0.9em;
-            color: #b5cea8;
-            font-weight: normal;
-        }
-        .code-block {
-            position: relative;
-            background: #1e1e1e;
-            padding: 10px;
-            border-radius: 4px;
-            margin-top: 0.5rem;
-        }
-        .code-block code {
-            white-space: pre-wrap;
-            padding: 0;
-            background: none;
-            display: block;
-            padding-right: 60px;
-        }
-        .code-block .copy-btn {
-            position: absolute;
-            top: 5px;
-            right: 5px;
-        }
+        .copy-btn:hover { background: #4f4f4f; }
+        .copy-btn.copied { background: #007acc; color: #fff; }
     </style>
     <script>
     "use strict";
 
-    window.startEmulator = function(blobs) {
-        if (typeof V86Starter === "undefined") {
-            console.error("V86Starter is not defined. Ensure libv86.js is loaded.");
-            return;
-        }
-
-        var emulator = new V86Starter({
-            memory_size: 1024 * 1024 * 1024,
-            vga_memory_size: 2 * 1024 * 1024,
-            screen_container: document.getElementById("screen_container"),
-            bios: { url: blobs["seabios.bin"] },
-            vga_bios: { url: blobs["vgabios.bin"] },
-            fda: { url: blobs["sectorforth.img"] },
-            autostart: true,
-        });
-    };
-    
-    function copyText(button, text) {
-        if (!navigator.clipboard) {
-            return;
-        }
-        // Replace escaped newline with actual newline for clipboard
-        const textToCopy = text.replace(/\\n/g, '\n');
-        navigator.clipboard.writeText(textToCopy).then(function() {
-            const originalText = button.textContent;
-            button.textContent = 'Copied!';
-            button.classList.add('copied');
-            setTimeout(function() {
-                button.textContent = originalText;
-                button.classList.remove('copied');
-            }, 2000);
-        }, function(err) {
-            console.error('Could not copy text: ', err);
-        });
+window.startEmulator = function(blobs) {
+    if (typeof V86Starter === "undefined") {
+        console.error("V86Starter is not defined. Ensure libv86.js is loaded.");
+        return;
     }
+
+    var emulator = new V86Starter({
+        memory_size: 1024 * 1024 * 1024, //Default 32
+        vga_memory_size: 2 * 1024 * 1024, //Default 2
+        screen_container: document.getElementById("screen_container"),
+        bios: {
+            url: blobs["seabios.bin"],
+        },
+        vga_bios: {
+            url: blobs["vgabios.bin"],
+        },
+        fda: { //hda cdrom fda
+            url: blobs["sectorforth.img"], // freedos.boot.disk.160K.img
+        },
+        autostart: true,
+    });
+};
     </script>
 </head>
 <body>
-    <div id="main-container">
-        <div id="emulator-column">
-            <h1>Decode and Run Sectorforth</h1>
-            <div id="emulator-container">
-                <div id="screen_container">
-                    <div style="white-space: pre; font: 14px monospace; line-height: 14px"></div>
-                    <canvas style="display: none"></canvas>
-                </div>
-            </div>
-        </div>
-        <div id="reference-column">
-            <div id="reference-panel">
-                <h2>Sectorforth Reference</h2>
-
-                <h3>Core Primitives</h3>
-                <table class="manual-table">
-                    <thead><tr><th>Primitive</th><th>Stack Effect</th><th>Description</th></tr></thead>
-                    <tbody>
-                        <tr><td><code>@</code></td><td>( addr -- x )</td><td>Fetch 16-bit value from memory.</td></tr>
-                        <tr><td><code>!</code></td><td>( x addr -- )</td><td>Store 16-bit value at memory.</td></tr>
-                        <tr><td><code>sp@</code></td><td>( -- sp )</td><td>Get data stack pointer address.</td></tr>
-                        <tr><td><code>rp@</code></td><td>( -- rp )</td><td>Get return stack pointer address.</td></tr>
-                        <tr><td><code>0=</code></td><td>( x -- flag )</td><td>True (-1) if x is 0, else false (0).</td></tr>
-                        <tr><td><code>+</code></td><td>( x y -- z )</td><td>Adds x and y.</td></tr>
-                        <tr><td><code>nand</code></td><td>( x y -- z )</td><td>Bitwise NAND of x and y.</td></tr>
-                        <tr><td><code>exit</code></td><td>(R: addr -- )</td><td>Ends word definition, returns to caller.</td></tr>
-                        <tr><td><code>key</code></td><td>( -- char )</td><td>Reads a single keystroke.</td></tr>
-                        <tr><td><code>emit</code></td><td>( char -- )</td><td>Prints ASCII character.</td></tr>
-                    </tbody>
-                </table>
-
-                <h3>System Variables</h3>
-                <ul class="var-list">
-                    <li><code>state</code>: Interpreter state (0=interpret, 1=compile).</li>
-                    <li><code>tib</code>: Terminal Input Buffer address.</li>
-                    <li><code>>in</code>: Offset into the TIB for parsing.</li>
-                    <li><code>here</code>: Pointer to next available dictionary space.</li>
-                    <li><code>latest</code>: Pointer to the most recent word definition.</li>
-                </ul>
-
-                <h3>Common Forth Words</h3>
-                <p>Paste these definitions into the emulator to build up functionality.</p>
-                
-                <div class="command-item">
-                    <h4><button class="copy-btn" onclick="copyText(this, ': DUP SP@ @ ;')">Copy</button>DUP <span class="stack-effect">( x -- x x )</span></h4>
-                    <p><code>: DUP SP@ @ ;</code></p>
-                </div>
-                
-                <div class="command-item">
-                    <h4><button class="copy-btn" onclick="copyText(this, ': INVERT DUP NAND ;')">Copy</button>INVERT <span class="stack-effect">( x -- !x )</span></h4>
-                    <p><code>: INVERT DUP NAND ;</code></p>
-                </div>
-
-                <div class="command-item">
-                    <h4><button class="copy-btn" onclick="copyText(this, ': -1 0 INVERT ;\\n: 1 -1 DUP + INVERT ;')">Copy</button>-1 and 1</h4>
-                    <p><code>: -1 0 INVERT ;</code><br><code>: 1 -1 DUP + INVERT ;</code></p>
-                </div>
-
-                <div class="command-item">
-                    <h4><button class="copy-btn" onclick="copyText(this, ': NEGATE INVERT 1 + ;')">Copy</button>NEGATE <span class="stack-effect">( x -- -x )</span></h4>
-                    <p><code>: NEGATE INVERT 1 + ;</code></p>
-                </div>
-
-                <div class="command-item">
-                    <h4><button class="copy-btn" onclick="copyText(this, ': 2 1 1 + ;\\n: 3 1 2 + ;\\n: 4 2 2 + ;\\n: 5 2 3 + ;\\n: 6 3 3 + ;')">Copy</button>Numbers 2 to 6</h4>
-                    <p><code>: 2 1 1 + ;</code><br><code>: 3 1 2 + ;</code><br><code>: 4 2 2 + ;</code><br><code>: 5 2 3 + ;</code><br><code>: 6 3 3 + ;</code></p>
-                </div>
-
-                <div class="command-item">
-                    <h4><button class="copy-btn" onclick="copyText(this, ': OVER SP@ 2 + @ ;')">Copy</button>OVER <span class="stack-effect">( x y -- x y x )</span></h4>
-                    <p><code>: OVER SP@ 2 + @ ;</code></p>
-                </div>
-                
-                <div class="command-item">
-                    <h4><button class="copy-btn" onclick="copyText(this, ': DROP SP@ 2 + SP@ ! ;')">Copy</button>DROP <span class="stack-effect">( x -- )</span></h4>
-                    <p><code>: DROP SP@ 2 + SP@ ! ;</code></p>
-                </div>
-
-                <div class="command-item">
-                    <h4><button class="copy-btn" onclick="copyText(this, ': SWAP OVER OVER SP@ 6 + ! SP@ 2 + ! ;')">Copy</button>SWAP <span class="stack-effect">( x y -- y x )</span></h4>
-                    <p><code>: SWAP OVER OVER SP@ 6 + ! SP@ 2 + ! ;</code></p>
-                </div>
-            </div>
-        </div>
+    <div id="start_emulation"></div>
+    <div id="screen_container">
+        <div style="white-space: pre; font: 14px monospace; line-height: 14px"></div>
+        <canvas style="display: none"></canvas>
     </div>
     <script>
         var blobs = {};
 
         function isGzipCompressed(data) {
+            // Function to check if data is Gzip compressed
             return data[0] === 0x1F && data[1] === 0x8B;
         }
 
@@ -320,16 +208,30 @@
         }
 
         function appendFileToDocument(blob, fileName) {
-            var url = window.URL.createObjectURL(blob);
+            var file = new Blob([blob], { type: 'application/octet-stream' });
+            var url = window.URL.createObjectURL(file); // Use "file" instead of "blob"
             blobs[fileName] = url;
-            console.log(`File: ${fileName}, Blob URL: ${url}, Size: ${blob.size}, Type: ${blob.type}`);
+
+            console.log(`File: ${fileName}, Blob URL: ${url}, Size: ${file.size}, Type: ${file.type}`);
         }
 
         function loadEmulator() {
+            // Start the emulator after replacing placeholders
             if (window.startEmulator) {
                 window.startEmulator(blobs);
             }
         }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Fetch and process chunky-sectorforth.html automatically on page load
+            fetch('chunky-sectorforth.html')
+                .then(response => response.text())
+                .then(content => {
+                    processDataFromChunkyHTML(content);
+                    loadEmulator(); // Load the emulator after processing chunky-sectorforth.html
+                })
+                .catch(error => console.error('Error loading chunky-sectorforth.html:', error));
+        });
 
         function processDataFromChunkyHTML(htmlContent) {
             console.log("Processing HTML content");
@@ -371,52 +273,96 @@
 
             for (const [fileIdentifier, base64Data] of Object.entries(blobs)) {
                 const blob = base64ToBlob(base64Data);
-                if (blob) {
-                    blobs[fileIdentifier] = blob;
-                    appendFileToDocument(blob, fileIdentifier);
-                    if (fileIdentifier === "libv86.js") {
-                        appendScriptToDocument(blob, fileIdentifier);
-                    }
+                console.log(`File: ${fileIdentifier}, Blob:`, blob);
+                blobs[fileIdentifier] = blob;
+
+                // Append the Blob to the document
+                appendFileToDocument(blob, fileIdentifier);
+
+                if (fileIdentifier === "libv86.js") {
+                    appendScriptToDocument(blob, fileIdentifier);
                 }
             }
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            window.addEventListener('message', function(event) {
-                // Ideally, you should check event.origin for security
-                // For example: if (event.origin !== 'expected_origin') return;
+        document.getElementById('decodeButton').addEventListener('click', function() {
+            const fileInput = document.getElementById('chunkyFileInput');
+            if (fileInput.files.length === 0) {
+                alert('Please select the chunky-sectorforth.html file.');
+                return;
+            }
 
-                if (event.data && event.data.type === 'emulatorAssets') {
-                    const receivedBlobs = event.data.payload;
-                    for (const fileName in receivedBlobs) {
-                        if (receivedBlobs.hasOwnProperty(fileName)) {
-                            // The parent window already created blob URLs
-                            blobs[fileName] = receivedBlobs[fileName];
-                            console.log(`Received blob URL for: ${fileName}, URL: ${blobs[fileName]}`);
-                            // If libv86.js, we need to load it as a script
-                            if (fileName === "libv86.js") {
-                                var script = document.createElement('script');
-                                script.src = blobs[fileName];
-                                document.head.appendChild(script);
-                                script.onload = function() {
-                                    if (window.startEmulator) {
-                                        window.startEmulator(blobs);
-                                    }
-                                };
-                            }
-                        }
-                    }
-                    // If libv86.js was not in the receivedBlobs or has already loaded,
-                    // and startEmulator is available, try to start.
-                    if (!blobs["libv86.js"] && window.startEmulator) {
-                         window.startEmulator(blobs);
-                    } else if (blobs["libv86.js"] && window.V86Starter && window.startEmulator) {
-                        // This case handles if libv86.js was loaded but startEmulator wasn't called by its onload
-                        window.startEmulator(blobs);
-                    }
-                }
-            }, false);
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const content = e.target.result;
+                processDataFromChunkyHTML(content);
+            };
+            reader.readAsText(file);
         });
     </script>
+    <div id="main-container">
+                    <div style="white-space: pre; font: 14px monospace; line-height: 14px"></div>
+                    <canvas style="display: none"></canvas>
+                </div>
+            </div>
+        </div>
+        <div id="reference-column">
+            <div id="reference-panel">
+                <h2>Sectorforth Reference</h2>
+
+                <h3>Core Primitives</h3>
+                <table class="manual-table">
+                    <thead><tr><th>Primitive</th><th>Stack Effect</th><th>Description</th></tr></thead>
+                    <tbody>
+                        <tr><td><code>@</code></td><td>( addr -- x )</td><td>Fetch 16-bit value from memory.</td></tr>
+                        <tr><td><code>!</code></td><td>( x addr -- )</td><td>Store 16-bit value at memory.</td></tr>
+                        <tr><td><code>sp@</code></td><td>( -- sp )</td><td>Get data stack pointer address.</td></tr>
+                        <tr><td><code>rp@</code></td><td>( -- rp )</td><td>Get return stack pointer address.</td></tr>
+                        <tr><td><code>0=</code></td><td>( x -- flag )</td><td>True (-1) if x is 0, else false (0).</td></tr>
+                        <tr><td><code>+</code></td><td>( x y -- z )</td><td>Adds x and y.</td></tr>
+                        <tr><td><code>nand</code></td><td>( x y -- z )</td><td>Bitwise NAND of x and y.</td></tr>
+                        <tr><td><code>exit</code></td><td>(R: addr -- )</td><td>Ends word definition, returns to caller.</td></tr>
+                        <tr><td><code>key</code></td><td>( -- char )</td><td>Reads a single keystroke.</td></tr>
+                        <tr><td><code>emit</code></td><td>( char -- )</td><td>Prints ASCII character.</td></tr>
+                    </tbody>
+                </table>
+
+                <h3>Common Forth Words</h3>
+                <p>Paste these definitions into the emulator to build up functionality.</p>
+
+                <div class="command-item">
+                    <h4><button class="copy-btn" onclick="copyText(this, ': DUP SP@ @ ;')">Copy</button>DUP <span class="stack-effect">( x -- x x )</span></h4>
+                    <p><code>: DUP SP@ @ ;</code></p>
+                </div>
+                <div class="command-item">
+                    <h4><button class="copy-btn" onclick="copyText(this, ': INVERT DUP NAND ;')">Copy</button>INVERT <span class="stack-effect">( x -- !x )</span></h4>
+                    <p><code>: INVERT DUP NAND ;</code></p>
+                </div>
+                <div class="command-item">
+                    <h4><button class="copy-btn" onclick="copyText(this, ': -1 0 INVERT ;')">Copy</button>-1</h4>
+                    <p><code>: -1 0 INVERT ;</code></p>
+                </div>
+                 <div class="command-item">
+                    <h4><button class="copy-btn" onclick="copyText(this, ': 1 -1 DUP + INVERT ;')">Copy</button>1</h4>
+                    <p><code>: 1 -1 DUP + INVERT ;</code></p>
+                </div>
+                <div class="command-item">
+                    <h4><button class="copy-btn" onclick="copyText(this, ': NEGATE INVERT 1 + ;')">Copy</button>NEGATE <span class="stack-effect">( x -- -x )</span></h4>
+                    <p><code>: NEGATE INVERT 1 + ;</code></p>
+                </div>
+                <div class="command-item">
+                    <h4><button class="copy-btn" onclick="copyText(this, ': OVER SP@ 2 + @ ;')">Copy</button>OVER <span class="stack-effect">( x y -- x y x )</span></h4>
+                    <p><code>: OVER SP@ 2 + @ ;</code></p>
+                </div>
+                <div class="command-item">
+                    <h4><button class="copy-btn" onclick="copyText(this, ': DROP SP@ 2 + SP@ ! ;')">Copy</button>DROP <span class="stack-effect">( x -- )</span></h4>
+                    <p><code>: DROP SP@ 2 + SP@ ! ;</code></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 </body>
 </html>
+

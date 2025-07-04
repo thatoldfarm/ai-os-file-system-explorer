@@ -3,11 +3,12 @@
 import React, { useState, useEffect, FC, useRef, useMemo } from 'react';
 import { createRoot } from 'react-dom/client';
 import { GoogleGenAI } from "@google/genai";
+import pako from 'pako';
 
 // Import new modules
 import type { FileBlob, LiaState, ChatMessage, LogEntry } from './core/types';
 import { INITIAL_LIA_STATE, BOOTSTRAP_SEQUENCE } from './core/constants';
-import { getMimeType, unpackFiles, generateIndexHtmlContent, extractAssetsFromChunkyFileContent } from './core/file-system';
+import { getMimeType, unpackFiles, generateIndexHtmlContent } from './core/file-system';
 import { FileExplorer } from './components/FileExplorer';
 import { ContentViewer } from './components/ContentViewer';
 import { SystemManual } from './components/modals/SystemManual';
@@ -40,10 +41,8 @@ const App: FC = () => {
   const [showHud, setShowHud] = useState(true);
   const [showSectorforth, setShowSectorforth] = useState(false);
   const [showFreedos, setShowFreedos] = useState(false);
-  const [sectorforthUrl, setSectorforthUrl] = useState('');
-  const [freedosUrl, setFreedosUrl] = useState('');
-  const [sectorforthAssetsMap, setSectorforthAssetsMap] = useState<Record<string, string> | null>(null);
-  const [freedosAssetsMap, setFreedosAssetsMap] = useState<Record<string, string> | null>(null);
+  const [sectorforthUrl, setSectorforthUrl] = useState('/start-sectorforth.html');
+  const [freedosUrl, setFreedosUrl] = useState('/start-freedos.html');
   const [copiedContent, setCopiedContent] = useState('');
   
   // App View State
@@ -180,14 +179,14 @@ Do not wrap the JSON in markdown or any other text.`;
   };
 
   const updateVirtualFile = (fileName: string, newContent: string): string => {
-    let newUrl = '';
+    const mimeType = getMimeType(fileName);
+    const newBlob = new Blob([newContent], { type: mimeType });
+    const newUrl = URL.createObjectURL(newBlob);
+
     setFiles(prevFiles => {
       const newFiles = [...prevFiles];
       const fileIndex = newFiles.findIndex(f => f.name === fileName);
-      const mimeType = getMimeType(fileName);
-      const newBlob = new Blob([newContent], { type: mimeType });
-      newUrl = URL.createObjectURL(newBlob);
-  
+      
       const newFileProps: Partial<FileBlob> = {
         raw: newBlob,
         url: newUrl,
@@ -244,18 +243,25 @@ Your response MUST be a single, valid JSON object with NO MARKDOWN WRAPPER. The 
   "content": string    // The new file content for update/create, or the narrative for narrate.
 }
 
-Example for 'System Reforge':
+CRITICAL RULE: The value for the "content" key MUST be a valid JSON string. This is the most important instruction. Pay close attention to escaping rules, especially for HTML and Javascript code.
+- Backslash (\\) must be escaped as \\\\.
+- Double quote (") must be escaped as \\".
+- Newline must be escaped as \\n.
+- Tab must be escaped as \\t.
+- Do NOT escape single quotes ('). They are valid characters within a JSON string.
+
+Example for 'Shell Augmentation' with complex content:
 {
   "action": "update_file",
-  "file_name": "0index.html",
-  "content": "<!DOCTYPE html><html>...</html>"
+  "file_name": "0shell.html",
+  "content": "<!DOCTYPE html>\\n<html lang=\\"en\\">\\n<head>\\n  <title>LIA Shell<\\/title>\\n<\\/head>\\n<body>\\n<script>\\n  function greet() {\\n    console.log(\\"Hello from LIA's shell!\\");\\n  }\\n<\\/script>\\n<\\/body>\\n<\\/html>"
 }
 
 Example for 'Create Log':
 {
   "action": "create_file",
   "file_name": "probe_log_2024.txt",
-  "content": "Phantom Signal probe initiated at... results..."
+  "content": "Phantom Signal probe initiated at...\\nresults..."
 }
 
 Example for 'Send' or 'Corpus Analysis':
@@ -327,33 +333,11 @@ Analyze the user's request and the selected operator, and generate the appropria
       try {
         setLoading(true);
         setError(null);
-        let initialUnpackedFiles = await unpackFiles();
+        const initialUnpackedFiles = await unpackFiles();
+        
+        setFiles(initialUnpackedFiles);
 
-        let allProcessedFiles: FileBlob[] = [...initialUnpackedFiles];
-
-        const chunkySfFile = initialUnpackedFiles.find(f => f.name === 'chunky-sectorforth.html');
-        if (chunkySfFile && chunkySfFile.textContent) {
-            try {
-                const sfEmbeddedAssetsMap = await extractAssetsFromChunkyFileContent(chunkySfFile);
-                allProcessedFiles = [...allProcessedFiles, ...Object.values(sfEmbeddedAssetsMap)];
-            } catch (e) {
-                console.error("Error extracting Sectorforth assets:", e);
-            }
-        }
-
-        const chunkyFdFile = initialUnpackedFiles.find(f => f.name === 'chunky-freedos.html');
-        if (chunkyFdFile && chunkyFdFile.textContent) {
-            try {
-                const fdEmbeddedAssetsMap = await extractAssetsFromChunkyFileContent(chunkyFdFile);
-                allProcessedFiles = [...allProcessedFiles, ...Object.values(fdEmbeddedAssetsMap)];
-            } catch (e) {
-                console.error("Error extracting FreeDOS assets:", e);
-            }
-        }
-        // console.log('All processed files (after chunky extraction):', JSON.stringify(allProcessedFiles.map(f => ({ name: f.name, type: f.type, size: f.size, url: f.url })), null, 2));
-        setFiles(allProcessedFiles);
-
-        const defaultActiveFile = allProcessedFiles.find(f => f.name === 'LIA_HOSS.key') || allProcessedFiles[0];
+        const defaultActiveFile = initialUnpackedFiles.find(f => f.name === 'LIA_HOSS.key') || initialUnpackedFiles[0];
         if (defaultActiveFile) {
             setActiveFile(defaultActiveFile);
         }
@@ -380,38 +364,6 @@ Analyze the user's request and the selected operator, and generate the appropria
     updateVirtualFile('0index.html', newIndexContent);
     
   }, [fileManifest]);
-
-  // Effect to find emulator URLs and populate asset maps once files are unpacked
-  useEffect(() => {
-    console.log('[Effect for Asset Maps] Files state received:', JSON.stringify(files.map(f => f.name ? f.name : 'UNKNOWN_FILE_NAME'), null, 2));
-    if (files.length > 0) {
-      const sfFile = files.find(f => f.name === 'sectorforth_emu.html');
-      if (sfFile) setSectorforthUrl(sfFile.url);
-
-      const fdFile = files.find(f => f.name === 'freedos_emu.html');
-      if (fdFile) setFreedosUrl(fdFile.url);
-
-      // Populate asset maps
-      const newSfAssets: Record<string, string> = {};
-      const newFdAssets: Record<string, string> = {};
-      const requiredSfAssets = ["seabios.bin", "vgabios.bin", "sectorforth.img", "libv86.js"];
-      const requiredFdAssets = ["seabios.bin", "vgabios.bin", "freedos.boot.disk.160K.img", "libv86.js"];
-
-      files.forEach(file => {
-        if (file.name && requiredSfAssets.includes(file.name)) {
-          newSfAssets[file.name] = file.url;
-        }
-        if (file.name && requiredFdAssets.includes(file.name)) {
-          newFdAssets[file.name] = file.url;
-        }
-      });
-      console.log('[Effect for Asset Maps] Populated newSfAssets:', JSON.stringify(newSfAssets, null, 2));
-      setSectorforthAssetsMap(newSfAssets);
-      console.log('[Effect for Asset Maps] Populated newFdAssets:', JSON.stringify(newFdAssets, null, 2));
-      setFreedosAssetsMap(newFdAssets);
-    }
-  }, [files]);
-
 
   if (loading) {
     return <div className="loader-container"><div className="loader"></div><p>Booting Virtual OS...</p></div>;
@@ -485,14 +437,12 @@ Analyze the user's request and the selected operator, and generate the appropria
         isVisible={showSectorforth}
         src={sectorforthUrl}
         onClose={() => setShowSectorforth(false)}
-        assetsMap={sectorforthAssetsMap}
         title="Sectorforth Emulator"
       />
       <GenericEmulatorWindow
         isVisible={showFreedos}
         src={freedosUrl}
         onClose={() => setShowFreedos(false)}
-        assetsMap={freedosAssetsMap}
         title="FreeDOS Emulator"
       />
     </div>

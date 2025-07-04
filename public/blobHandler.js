@@ -69,43 +69,5 @@ function handleScriptResourceRequest(scriptName, resourcePath) {
   }
 }
 
-// New function to get .mp4 files from the blobs
-function getMp4Files() {
-  const mp4Files = [];
-  blobs.forEach((directoryBlobs, directory) => {
-    directoryBlobs.forEach((blob, key) => {
-      if (blob.type === 'video/mp4') {
-        mp4Files.push({ name: key, url: URL.createObjectURL(blob) });
-      }
-    });
-  });
-  return mp4Files;
-}
-
-// Function to automatically play videos
-function autoPlayVideos() {
-    const mp4Files = getMp4Files();
-    let currentVideoIndex = 0;
-
-    function playNextVideo() {
-        if (currentVideoIndex < mp4Files.length) {
-            loadVideo(mp4Files[currentVideoIndex].url);
-            currentVideoIndex++;
-        } else {
-            console.log('Playlist ended');
-        }
-    }
-
-    // Load and play the first video
-    playNextVideo();
-
-    // Event listener for when a video ends
-    const videoPlayer = document.getElementById('videoPlayer');
-    videoPlayer.onended = playNextVideo;
-}
-
-// Call autoPlayVideos on window load
-window.onload = autoPlayVideos;
-
 // Export functions for external use
-export { getBlobFromURLOrFilename, createObjectURLInDirectory, handleScriptResourceRequest, getMp4Files, autoPlayVideos };
+export { getBlobFromURLOrFilename, createObjectURLInDirectory, handleScriptResourceRequest };

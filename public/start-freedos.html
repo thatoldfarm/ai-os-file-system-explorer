@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>File Decoder for Freedos Emulator</title>
+    <title>File Decoder from Chunky HTML</title>
     <script src="pako_inflate.min.js"></script>
-    <script src="blobHandler.js" type="module"></script>
+    <script src="blobHandler.js"></script>
     <style>
         body {
             font-family: sans-serif;
@@ -127,7 +127,6 @@
     </script>
 </head>
 <body>
-    <h1>Decode Data from Chunky HTML</h1>
     <div id="start_emulation"></div>
     <div id="emulator-container">
         <div id="screen_container">
@@ -223,41 +222,88 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            window.addEventListener('message', function(event) {
-                // Ideally, you should check event.origin for security
-                // For example: if (event.origin !== 'expected_origin') return;
-
-                if (event.data && event.data.type === 'emulatorAssets') {
-                    const receivedBlobs = event.data.payload;
-                    for (const fileName in receivedBlobs) {
-                        if (receivedBlobs.hasOwnProperty(fileName)) {
-                            // The parent window already created blob URLs
-                            blobs[fileName] = receivedBlobs[fileName];
-                            console.log(`Received blob URL for: ${fileName}, URL: ${blobs[fileName]}`);
-                            // If libv86.js, we need to load it as a script
-                            if (fileName === "libv86.js") {
-                                var script = document.createElement('script');
-                                script.src = blobs[fileName];
-                                document.head.appendChild(script);
-                                script.onload = function() {
-                                    if (window.startEmulator) {
-                                        window.startEmulator(blobs);
-                                    }
-                                };
-                            }
-                        }
+            // Attempt to auto-load chunky-freedos.html
+            fetch('chunky-freedos.html')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('chunky-freedos.html not found or fetch failed');
                     }
-                    // If libv86.js was not in the receivedBlobs or has already loaded,
-                    // and startEmulator is available, try to start.
-                    if (!blobs["libv86.js"] && window.startEmulator) {
-                         window.startEmulator(blobs);
-                    } else if (blobs["libv86.js"] && window.V86Starter && window.startEmulator) {
-                        // This case handles if libv86.js was loaded but startEmulator wasn't called by its onload
-                        window.startEmulator(blobs);
-                    }
-                }
-            }, false);
+                    return response.text();
+                })
+                .then(content => {
+                    processDataFromChunkyHTML(content);
+                    loadEmulator();
+                })
+                .catch(error => {
+                    console.warn('Automatic loading of chunky-freedos.html failed:', error);
+                    // Optionally, inform the user that they might need to load manually
+                    // For example: document.getElementById('statusMessage').textContent = 'Auto-load failed. Please use manual load.';
+                });
         });
+
+        document.getElementById('decodeButton').addEventListener('click', function() {
+            const fileInput = document.getElementById('chunkyFileInput');
+            if (fileInput.files.length === 0) {
+                alert('Please select the chunky-freedos.html file.');
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const content = e.target.result;
+                processDataFromChunkyHTML(content);
+                loadEmulator(); // Load emulator after processing
+            };
+            reader.readAsText(file);
+        });
+
+        function processDataFromChunkyHTML(htmlContent) {
+            const scriptContentMatch = htmlContent.match(/<script>([\s\S]*?)<\/script>/);
+            if (!scriptContentMatch) {
+                console.error("No script with JSON data found");
+                return;
+            }
+
+            const scriptContent = scriptContentMatch[1];
+            const jsonDataMatches = scriptContent.match(/data \+= `([\s\S]*?)`;/g);
+            if (!jsonDataMatches) {
+                console.error("No JSON data found in script");
+                return;
+            }
+
+            let sortedChunks = [];
+            jsonDataMatches.forEach((jsonDataMatch) => {
+                const jsonData = jsonDataMatch.match(/data \+= `([\s\S]*?)`;/)[1].trim();
+                try {
+                    const json = JSON.parse(jsonData);
+                    if (json && json.content && json.content.chunk && typeof json.content.chunk === 'string') {
+                        sortedChunks.push({ file: json.file, chunk: json.content.chunk, number: json.number });
+                    }
+                } catch (e) {
+                    console.error("Error parsing JSON chunk", e);
+                }
+            });
+            sortedChunks.sort((a, b) => a.number - b.number);
+
+            sortedChunks.forEach((chunk) => {
+                const fileIdentifier = chunk.file;
+                if (!blobs[fileIdentifier]) {
+                    blobs[fileIdentifier] = '';
+                }
+                blobs[fileIdentifier] += chunk.chunk;
+            });
+
+            for (const [fileIdentifier, base64Data] of Object.entries(blobs)) {
+                const blob = base64ToBlob(base64Data);
+                blobs[fileIdentifier] = blob;
+                appendFileToDocument(blob, fileIdentifier);
+
+                if (fileIdentifier === "libv86.js") {
+                    appendScriptToDocument(blob, fileIdentifier);
+                }
+            }
+        }
     </script>
 </body>
 </html>
