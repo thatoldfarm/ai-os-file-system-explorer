@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <title>File Decoder from Chunky HTML</title>
     <script src="pako_inflate.min.js"></script>
-    <script src="blobHandler.js"></script>
     <style>
         body {
             font-family: sans-serif;
@@ -215,12 +214,6 @@
             console.log(`File: ${fileName}, Blob URL: ${url}, Size: ${blob.size}, Type: ${blob.type}`);
         }
 
-        function loadEmulator() {
-            if (window.startEmulator) {
-                window.startEmulator(blobs);
-            }
-        }
-
         document.addEventListener('DOMContentLoaded', () => {
             // Attempt to auto-load chunky-freedos.html
             fetch('chunky-freedos.html')
@@ -232,30 +225,10 @@
                 })
                 .then(content => {
                     processDataFromChunkyHTML(content);
-                    loadEmulator();
                 })
                 .catch(error => {
                     console.warn('Automatic loading of chunky-freedos.html failed:', error);
-                    // Optionally, inform the user that they might need to load manually
-                    // For example: document.getElementById('statusMessage').textContent = 'Auto-load failed. Please use manual load.';
                 });
-        });
-
-        document.getElementById('decodeButton').addEventListener('click', function() {
-            const fileInput = document.getElementById('chunkyFileInput');
-            if (fileInput.files.length === 0) {
-                alert('Please select the chunky-freedos.html file.');
-                return;
-            }
-
-            const file = fileInput.files[0];
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const content = e.target.result;
-                processDataFromChunkyHTML(content);
-                loadEmulator(); // Load emulator after processing
-            };
-            reader.readAsText(file);
         });
 
         function processDataFromChunkyHTML(htmlContent) {
