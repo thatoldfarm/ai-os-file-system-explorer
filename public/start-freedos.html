@@ -127,8 +127,6 @@
 </head>
 <body>
     <h1>Decode Data from Chunky HTML</h1>
-    <input type="file" id="chunkyFileInput" accept=".html">
-    <button id="decodeButton">Decode and Process</button>
     <div id="start_emulation"></div>
     <div id="emulator-container">
         <div id="screen_container">
@@ -241,23 +239,6 @@
                     // Optionally, inform the user that they might need to load manually
                     // For example: document.getElementById('statusMessage').textContent = 'Auto-load failed. Please use manual load.';
                 });
-        });
-
-        document.getElementById('decodeButton').addEventListener('click', function() {
-            const fileInput = document.getElementById('chunkyFileInput');
-            if (fileInput.files.length === 0) {
-                alert('Please select the chunky-freedos.html file.');
-                return;
-            }
-
-            const file = fileInput.files[0];
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const content = e.target.result;
-                processDataFromChunkyHTML(content);
-                loadEmulator(); // Load emulator after processing
-            };
-            reader.readAsText(file);
         });
 
         function processDataFromChunkyHTML(htmlContent) {
