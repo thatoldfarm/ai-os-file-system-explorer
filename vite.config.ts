@@ -12,6 +12,7 @@ export default defineConfig(({ mode }) => {
         alias: {
           '@': path.resolve(__dirname, '.'),
         }
-      }
+      },
+      assetsInclude: ['**/*.bin', '**/*.img', '**/pako_inflate.min.js']
     };
 });
