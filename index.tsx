@@ -42,6 +42,8 @@ const App: FC = () => {
   const [showFreedos, setShowFreedos] = useState(false);
   const [sectorforthUrl, setSectorforthUrl] = useState('');
   const [freedosUrl, setFreedosUrl] = useState('');
+  const [sectorforthAssetsMap, setSectorforthAssetsMap] = useState<Record<string, string> | null>(null);
+  const [freedosAssetsMap, setFreedosAssetsMap] = useState<Record<string, string> | null>(null);
   const [copiedContent, setCopiedContent] = useState('');
   
   // App View State
@@ -364,6 +366,23 @@ Analyze the user's request and the selected operator, and generate the appropria
 
       const fdFile = files.find(f => f.name === 'freedos_emu.html');
       if (fdFile) setFreedosUrl(fdFile.url);
+
+      // Populate asset maps
+      const newSfAssets: Record<string, string> = {};
+      const newFdAssets: Record<string, string> = {};
+      const requiredSfAssets = ["seabios.bin", "vgabios.bin", "sectorforth.img", "libv86.js"];
+      const requiredFdAssets = ["seabios.bin", "vgabios.bin", "freedos.boot.disk.160K.img", "libv86.js"];
+
+      files.forEach(file => {
+        if (requiredSfAssets.includes(file.name)) {
+          newSfAssets[file.name] = file.url;
+        }
+        if (requiredFdAssets.includes(file.name)) {
+          newFdAssets[file.name] = file.url;
+        }
+      });
+      setSectorforthAssetsMap(newSfAssets);
+      setFreedosAssetsMap(newFdAssets);
     }
   }, [files]);
 
@@ -436,8 +455,20 @@ Analyze the user's request and the selected operator, and generate the appropria
         )}
       </main>
       {showManual && <SystemManual onClose={() => setShowManual(false)} />}
-      <SectorforthEmulatorWindow isVisible={showSectorforth} src={sectorforthUrl} onClose={() => setShowSectorforth(false)} onCopy={handleCopy} copiedContent={copiedContent} />
-      <GenericEmulatorWindow isVisible={showFreedos} src={freedosUrl} onClose={() => setShowFreedos(false)} title="FreeDOS-Tiny Emulator" />
+      <SectorforthEmulatorWindow
+        isVisible={showSectorforth}
+        src={sectorforthUrl}
+        onClose={() => setShowSectorforth(false)}
+        assetsMap={sectorforthAssetsMap}
+        title="Sectorforth Emulator"
+      />
+      <GenericEmulatorWindow
+        isVisible={showFreedos}
+        src={freedosUrl}
+        onClose={() => setShowFreedos(false)}
+        assetsMap={freedosAssetsMap}
+        title="FreeDOS Emulator"
+      />
     </div>
   );
 };
