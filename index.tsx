@@ -328,6 +328,7 @@ Analyze the user's request and the selected operator, and generate the appropria
         setLoading(true);
         setError(null);
         const unpackedFiles = await unpackFiles();
+        console.log('Unpacked files from unpackFiles():', JSON.stringify(unpackedFiles.map(f => ({ name: f.name, type: f.type, size: f.size, url: f.url })), null, 2));
         setFiles(unpackedFiles);
 
         const defaultActiveFile = unpackedFiles.find(f => f.name === 'LIA_HOSS.key') || unpackedFiles[0];
