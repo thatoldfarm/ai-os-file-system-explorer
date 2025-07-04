@@ -381,8 +381,9 @@ Analyze the user's request and the selected operator, and generate the appropria
     
   }, [fileManifest]);
 
-  // Effect to find emulator URLs once files are unpacked
+  // Effect to find emulator URLs and populate asset maps once files are unpacked
   useEffect(() => {
+    console.log('[Effect for Asset Maps] Files state received:', JSON.stringify(files.map(f => f.name ? f.name : 'UNKNOWN_FILE_NAME'), null, 2));
     if (files.length > 0) {
       const sfFile = files.find(f => f.name === 'sectorforth_emu.html');
       if (sfFile) setSectorforthUrl(sfFile.url);
@@ -397,14 +398,16 @@ Analyze the user's request and the selected operator, and generate the appropria
       const requiredFdAssets = ["seabios.bin", "vgabios.bin", "freedos.boot.disk.160K.img", "libv86.js"];
 
       files.forEach(file => {
-        if (requiredSfAssets.includes(file.name)) {
+        if (file.name && requiredSfAssets.includes(file.name)) {
           newSfAssets[file.name] = file.url;
         }
-        if (requiredFdAssets.includes(file.name)) {
+        if (file.name && requiredFdAssets.includes(file.name)) {
           newFdAssets[file.name] = file.url;
         }
       });
+      console.log('[Effect for Asset Maps] Populated newSfAssets:', JSON.stringify(newSfAssets, null, 2));
       setSectorforthAssetsMap(newSfAssets);
+      console.log('[Effect for Asset Maps] Populated newFdAssets:', JSON.stringify(newFdAssets, null, 2));
       setFreedosAssetsMap(newFdAssets);
     }
   }, [files]);
