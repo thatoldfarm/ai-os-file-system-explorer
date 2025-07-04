@@ -389,22 +389,10 @@ export const VIRTUAL_SECTORFORTH_HTML = `<!DOCTYPE html>
             }
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            fetch('chunky-sectorforth.html')
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('chunky-sectorforth.html not found or fetch failed');
-                    }
-                    return response.text();
-                })
-                .then(content => {
-                    processDataFromChunkyHTML(content);
-                    loadEmulator();
-                })
-                .catch(error => {
-                    console.warn('Automatic loading of chunky-sectorforth.html failed:', error);
-                });
-        });
+        // The DOMContentLoaded listener that fetches 'chunky-sectorforth.html' and processes it is removed.
+        // Asset loading will now be handled by the parent window sending blob URLs via postMessage.
+        // The window.addEventListener('message', ...) in public/start-sectorforth.html (derived from this template)
+        // will handle these messages.
     </script>
 </body>
 </html>
@@ -575,130 +563,10 @@ export const VIRTUAL_FREEDOS_HTML = `<!DOCTYPE html>
         <div class="command-item"><h4><button class="copy-btn" onclick="copyText(this, 'README.TXT')">Copy</button>README.TXT</h4></div>
     </div>
     <script>
-        var blobs = {};
-
-        function isGzipCompressed(data) {
-            return data[0] === 0x1F && data[1] === 0x8B;
-        }
-
-        function base64ToBlob(base64Data) {
-            let standardBase64 = base64Data.replace(/-/g, '+').replace(/_/g, '/');
-            while (standardBase64.length % 4 !== 0) {
-                standardBase64 += '=';
-            }
-            try {
-                const byteCharacters = atob(standardBase64);
-                const byteNumbers = new Array(byteCharacters.length);
-                for (let i = 0; i < byteCharacters.length; i++) {
-                    byteNumbers[i] = byteCharacters.charCodeAt(i);
-                }
-                const byteArray = new Uint8Array(byteNumbers);
-
-                if (isGzipCompressed(byteArray)) {
-                    return new Blob([pako.inflate(byteArray)]);
-                }
-                return new Blob([byteArray]);
-            } catch (e) {
-                console.error("Error in base64 decoding: ", e);
-                return null;
-            }
-        }
-
-        function appendScriptToDocument(blob, fileName) {
-            if (fileName.endsWith('.js')) {
-                var script = document.createElement('script');
-                script.src = URL.createObjectURL(blob);
-                document.head.appendChild(script);
-
-                if (fileName === 'libv86.js') {
-                    script.onload = function() {
-                        if (window.startEmulator) {
-                            window.startEmulator(blobs);
-                        }
-                    };
-                }
-            }
-        }
-
-        function appendFileToDocument(blob, fileName) {
-            var url = window.URL.createObjectURL(blob);
-            blobs[fileName] = url;
-
-            console.log(\`File: \${fileName}, Blob URL: \${url}, Size: \${blob.size}, Type: \${blob.type}\`);
-        }
-
-        function loadEmulator() {
-            if (window.startEmulator) {
-                window.startEmulator(blobs);
-            }
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            // Attempt to auto-load chunky-freedos.html
-            fetch('chunky-freedos.html')
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('chunky-freedos.html not found or fetch failed');
-                    }
-                    return response.text();
-                })
-                .then(content => {
-                    processDataFromChunkyHTML(content);
-                    loadEmulator();
-                })
-                .catch(error => {
-                    console.warn('Automatic loading of chunky-freedos.html failed:', error);
-                    // Optionally, inform the user that they might need to load manually
-                    // For example: document.getElementById('statusMessage').textContent = 'Auto-load failed. Please use manual load.';
-                });
-        });
-
-        function processDataFromChunkyHTML(htmlContent) {
-            const scriptContentMatch = htmlContent.match(/<script>([\\s\\S]*?)<\\/script>/);
-            if (!scriptContentMatch) {
-                console.error("No script with JSON data found");
-                return;
-            }
-
-            const scriptContent = scriptContentMatch[1];
-            const jsonDataMatches = scriptContent.match(/data \\+= \`([\\s\\S]*?)\`;/g);
-            if (!jsonDataMatches) {
-                console.error("No JSON data found in script");
-                return;
-            }
-
-            let sortedChunks = [];
-            jsonDataMatches.forEach((jsonDataMatch) => {
-                const jsonData = jsonDataMatch.match(/data \\+= \`([\\s\\S]*?)\`;/)[1].trim();
-                try {
-                    const json = JSON.parse(jsonData);
-                    if (json && json.content && json.content.chunk && typeof json.content.chunk === 'string') {
-                        sortedChunks.push({ file: json.file, chunk: json.content.chunk, number: json.number });
-                    }
-                } catch (e) {
-                    console.error("Error parsing JSON chunk", e);
-                }
-            });
-            sortedChunks.sort((a, b) => a.number - b.number);
-
-            sortedChunks.forEach((chunk) => {
-                const fileIdentifier = chunk.file;
-                if (!blobs[fileIdentifier]) {
-                    blobs[fileIdentifier] = '';
-                }
-                blobs[fileIdentifier] += chunk.chunk;
-            });
-
-            for (const [fileIdentifier, base64Data] of Object.entries(blobs)) {
-                const blob = base64ToBlob(base64Data);
-                blobs[fileIdentifier] = blob;
-                appendFileToDocument(blob, fileIdentifier);
-
-                if (fileIdentifier === "libv86.js") {
-                    appendScriptToDocument(blob, fileIdentifier);
-                }
-            }
-        }
+        // The DOMContentLoaded listener that fetches 'chunky-freedos.html' and processes it is removed.
+        // Asset loading will now be handled by the parent window sending blob URLs via postMessage.
+        // The window.addEventListener('message', ...) in public/start-freedos.html (derived from this template)
+        // will handle these messages.
     </script>
 </body>
 </html>
