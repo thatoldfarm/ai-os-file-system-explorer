@@ -190,8 +190,6 @@
     <div id="main-container">
         <div id="emulator-column">
             <h1>Decode and Run Sectorforth</h1>
-            <input type="file" id="chunkyFileInput" accept=".html">
-            <button id="decodeButton">Decode and Process</button>
             <div id="emulator-container">
                 <div id="screen_container">
                     <div style="white-space: pre; font: 14px monospace; line-height: 14px"></div>
@@ -397,23 +395,6 @@
                 .catch(error => {
                     console.warn('Automatic loading of chunky-sectorforth.html failed:', error);
                 });
-        });
-
-        document.getElementById('decodeButton').addEventListener('click', function() {
-            const fileInput = document.getElementById('chunkyFileInput');
-            if (fileInput.files.length === 0) {
-                alert('Please select the chunky-sectorforth.html file.');
-                return;
-            }
-
-            const file = fileInput.files[0];
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const content = e.target.result;
-                processDataFromChunkyHTML(content);
-                loadEmulator();
-            };
-            reader.readAsText(file);
         });
     </script>
 </body>
